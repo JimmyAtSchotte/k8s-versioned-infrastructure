@@ -1,0 +1,4 @@
+﻿ kubectl apply -f registry.yaml
+ 
+ Create tunnel to registry:
+ minikube service registry-service
