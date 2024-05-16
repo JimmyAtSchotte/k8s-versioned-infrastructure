@@ -1,4 +1,13 @@
-﻿ kubectl apply -f registry.yaml
+﻿ Create registry 
+ kubectl apply -f registry.yaml
  
  Create tunnel to registry:
- minikube service registry-service
+ minikube tunnel 
+ 
+ Install ingress controller
+ minikube addons enable ingress
+ 
+ Build and push admin to registry
+ docker build -t admin .
+ docker tag admin localhost:5000/admin
+ docker push localhost:5000/admin 
