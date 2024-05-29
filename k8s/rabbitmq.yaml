@@ -1,0 +1,26 @@
+﻿kind: Secret
+apiVersion: v1
+metadata:
+  name: rabbitmq-deployment-default-user
+data:
+  default_user.conf: ZGVmYXVsdF91c2VyID0gZGVmYXVsdF91c2VyXzRUM0xYUHRuSzJaU2Vsb0sKZGVmYXVsdF9wYXNzID0gcE1Va2dAN3l8Ukh5TEk0dg==
+  password: cE1Va2dAN3l8Ukh5TEk0dg==
+  username: ZGVmYXVsdF91c2VyXzRUM0xYUHRuSzJaU2Vsb0s=
+type: Opaque
+---
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-deployment
+spec:
+  replicas: 1
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+  secretBackend:
+    externalSecret:
+      name: "rabbitmq-deployment-default-user"

@@ -19,6 +19,17 @@ spec:
           image: localhost:5000/admin
           ports:
             - containerPort: 8080
+          env:
+            - name: ADMIN_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: admin_api_url
+            - name: REGISTRY_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: registry_api_url
 ---
 apiVersion: v1
 kind: Service

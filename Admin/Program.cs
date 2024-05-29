@@ -2,9 +2,25 @@ using Admin.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddEnvironmentVariables();
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+builder.Services.AddHttpClient("ADMIN_API", (provider, client) =>
+{
+    var configuration = provider.GetService<IConfiguration>();
+
+    client.BaseAddress = new Uri(configuration.GetValue<string>("ADMIN_API_URL"));
+}); 
+
+builder.Services.AddHttpClient("REGISTRY_API", (provider, client) =>
+{
+    var configuration = provider.GetService<IConfiguration>();
+
+    client.BaseAddress = new Uri(configuration.GetValue<string>("REGISTRY_API_URL"));
+});
 
 var app = builder.Build();
 

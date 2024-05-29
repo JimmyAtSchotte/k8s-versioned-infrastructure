@@ -1,0 +1,142 @@
+﻿@page "/apps"
+@using System.Text
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject IHttpClientFactory _httpClientFactory
+@rendermode InteractiveServer
+
+<PageTitle>Apps</PageTitle>
+
+<h1>Apps</h1>
+
+<button class="btn btn-primary" @onclick="async () => await AddApplication()">Add app</button>
+
+<table>
+    <thead>
+    <tr>
+        <th>Name</th>
+        <th>Image</th>
+        <th>Change image</th>
+    </tr>
+    </thead>
+    
+    <tbody>
+    @foreach (var application in _applications)
+    {
+        <tr>
+            <td>@application.Name</td>
+            <td>@application.Image</td>
+            <td>
+                <select @onchange="args => ChangeTag(application, args)">
+                    <option></option>
+                    @foreach (var tag in _webapplicationTags)
+                    {
+                        if (tag == application.Image)
+                        {
+                            <option selected="selected">@tag</option>
+                        }
+                        else
+                        {
+                            <option>@tag</option>
+                        }
+                    }
+                </select>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+
+
+@code {
+    private List<Application> _applications = new List<Application>();
+    private List<string> _webapplicationTags = new List<string>();
+    private HttpClient _adminClient;
+    private HttpClient _registryClient;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        _adminClient = _httpClientFactory.CreateClient("ADMIN_API");
+        _registryClient = _httpClientFactory.CreateClient("REGISTRY_API");
+
+        await ListAvailableTags();
+        await ListCustomers();
+    }
+
+    private async Task ListAvailableTags()
+    {
+        var response = await _registryClient.GetAsync("webapplication/tags/list");
+        var content = await response.Content.ReadAsStringAsync();
+        response.EnsureSuccessStatusCode();
+        _webapplicationTags = JsonSerializer.Deserialize<DockerImageResponse>(content).Tags.ToList();
+        StateHasChanged();
+    }
+
+    private async Task ListCustomers()
+    {
+        var response = await _adminClient.GetAsync("applications");
+        var content = await response.Content.ReadAsStringAsync();
+        response.EnsureSuccessStatusCode();
+        _applications = JsonSerializer.Deserialize<List<Application>>(content);
+        StateHasChanged();
+    }
+
+    private class Application
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        [JsonPropertyName("image")]
+        public string Image { get; set; }
+    }
+    
+    private class AddApplicationCommand
+    {
+        public string Name { get; set; }
+        public string Image { get; set; }
+    }
+    
+    private class UpdateApplicationImageCommand
+    {
+        public string Image { get; set; }
+    }
+    
+    
+
+    private async Task AddApplication()
+    {      
+        var command = new AddApplicationCommand()
+        {
+            Name = Guid.NewGuid().ToString()
+        };
+        
+        var response = await _adminClient.PostAsync("applications", new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json"));
+        response.EnsureSuccessStatusCode();
+        
+        await ListCustomers();
+    }  
+    
+    public class DockerImageResponse
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+        
+        [JsonPropertyName("tags")]
+        public string[] Tags { get; set; }
+    }
+
+
+    private async Task ChangeTag(Application application, ChangeEventArgs args)
+    {
+        var command = new UpdateApplicationImageCommand()
+        {
+            Image = args.Value.ToString()
+        };
+        
+        var response = await _adminClient.PostAsync($"applications/{application.Name}", new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json"));
+        response.EnsureSuccessStatusCode();
+    }
+
+}
+
+

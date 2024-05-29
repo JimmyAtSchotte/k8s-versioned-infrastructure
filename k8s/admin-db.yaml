@@ -1,0 +1,69 @@
+﻿apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: admin-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-db-deployment  
+  labels:
+    app: admin-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-db
+  template:
+    metadata:
+      labels:
+        app: admin-db
+    spec:
+      containers:
+        - name: admin-db
+          image: mongo
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: admin_db_database
+                  name: config
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: admin_db_username
+                  name: secrets
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: admin_db_password
+                  name: secrets   
+          volumeMounts:
+            - name: admin-db-storage
+              mountPath: /data/db
+      volumes:
+        - name: admin-db-storage
+          persistentVolumeClaim:
+            claimName: admin-db-pvc               
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: admin-db-service
+spec:
+  selector:
+    app: admin-db
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+
+

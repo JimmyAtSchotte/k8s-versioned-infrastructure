@@ -1,0 +1,43 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-web-app-version-watcher
+  labels:
+    app: admin-web-app-version-watcher
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-web-app-version-watcher
+  template:
+    metadata:
+      name: admin-web-app-version-watcher
+      labels:
+        app: admin-web-app-version-watcher
+    spec:
+      containers:
+        - name: admin-web-app-version-watcher
+          image: localhost:5000/admin-web-app-version-watcher          
+          env:
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: admin_db_username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: admin_db_password
+            - name: DB_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: admin_db_server
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: admin_db_database
+      restartPolicy: Always
+      
