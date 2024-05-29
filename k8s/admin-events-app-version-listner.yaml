@@ -1,0 +1,44 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admin-events-app-version-listner-deployment  
+  labels:
+    app: admin-events-app-version-listner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: admin-events-app-version-listner
+  template:
+    metadata:
+      labels:
+        app: admin-events-app-version-listner
+    spec:
+      containers:
+        - name: admin-events-app-version-listner
+          image: localhost:5000/admin-events-app-version-listner
+          ports:
+            - containerPort: 8080
+          env:                        
+            - name: QUEUE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: queue_host
+            - name: QUEUE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: queue_name                  
+            - name: QUEUE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-deployment-default-user
+                  key: username
+            - name: QUEUE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-deployment-default-user
+                  key: password
+
+  
