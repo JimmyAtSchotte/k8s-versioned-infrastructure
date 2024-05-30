@@ -1,4 +1,43 @@
-﻿apiVersion: apps/v1
+﻿apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-service-account
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cluster-admin-role
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "services", "namespaces", "configmaps", "secrets", "persistentvolumeclaims", "events"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["batch"]
+    resources: ["jobs", "cronjobs"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["roles", "rolebindings", "clusterroles", "clusterrolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cluster-admin-binding
+subjects:
+  - kind: ServiceAccount
+    name: admin-service-account
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: admin-events-app-version-listner-deployment  
@@ -14,6 +53,7 @@ spec:
       labels:
         app: admin-events-app-version-listner
     spec:
+      serviceAccountName: admin-service-account
       containers:
         - name: admin-events-app-version-listner
           image: localhost:5000/admin-events-app-version-listner
