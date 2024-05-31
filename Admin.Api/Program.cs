@@ -1,5 +1,7 @@
 using Admin.Api.Services;
 using Admin.DbContext;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.EntityFrameworkCore;
 
 var configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
@@ -43,7 +45,7 @@ app.MapGet("/applications", (AdminContext db) => db.Applications.ToList().Select
     .WithName("GetApplications")
     .WithOpenApi();
 
-app.MapPost("/applications", (AddApplicationCommand command, AdminContext db, RabbitMqService rabbitMqService) =>
+app.MapPost("/applications", async (AddApplicationCommand command, AdminContext db, RabbitMqService rabbitMqService) =>
 {
     var app = new Application()
         {
@@ -52,9 +54,16 @@ app.MapPost("/applications", (AddApplicationCommand command, AdminContext db, Ra
         };
 
     db.Applications.Add(app);
-    db.SaveChanges();
+    await db.SaveChangesAsync();
     
-    rabbitMqService.SendMessage(System.Text.Json.JsonSerializer.Serialize(app));
+    var queueMessage = new QueueMessage<Application>()
+    {
+        Action = "Create",
+        Version = "1",
+        Data = app
+    };
+    
+    rabbitMqService.SendMessage(System.Text.Json.JsonSerializer.Serialize(queueMessage));
     
     return new AppplicationResponse()
     {
@@ -63,19 +72,58 @@ app.MapPost("/applications", (AddApplicationCommand command, AdminContext db, Ra
     };
 });
 
-app.MapPost("/applications/{name}", (string name, UpdateImageCommand command, AdminContext db, RabbitMqService rabbitMqService) =>
+app.MapPost("/applications/{name}", async (string name, UpdateImageCommand command, AdminContext db, RabbitMqService rabbitMqService) =>
 {
-    var app = db.Applications.FirstOrDefault(x => x.Name == name);
+    var app = await  db.Applications.FirstOrDefaultAsync(x => x.Name == name);
+    
+    if (app == null)
+    {
+        return Results.NotFound(new { Message = "Application not found" });
+    }
+    
     app.Image = command.Image;
-    db.SaveChanges();
     
-    rabbitMqService.SendMessage(System.Text.Json.JsonSerializer.Serialize(app));
+    await db.SaveChangesAsync();
+
+    var queueMessage = new QueueMessage<Application>()
+    {
+        Action = "Update",
+        Version = "1",
+        Data = app
+    };
     
-    return new AppplicationResponse()
+    rabbitMqService.SendMessage(System.Text.Json.JsonSerializer.Serialize(queueMessage));
+    
+    return Results.Ok(new AppplicationResponse()
     {
         Name = app.Name,
         Image = app.Image
+    });
+});
+
+
+app.MapDelete("/applications/{name}", async (string name, AdminContext db, RabbitMqService rabbitMqService) =>
+{
+    var app = await db.Applications.FirstOrDefaultAsync(x => x.Name == name);
+    
+    if (app == null)
+    {
+        return Results.NotFound(new { Message = "Application not found" });
+    }
+
+    db.Applications.Remove(app);
+    await db.SaveChangesAsync();
+
+    var queueMessage = new QueueMessage<Application>
+    {
+        Action = "Delete",
+        Version = "1",
+        Data = app
     };
+
+    rabbitMqService.SendMessage(System.Text.Json.JsonSerializer.Serialize(queueMessage));
+
+    return Results.NoContent();
 });
 
 
@@ -96,4 +144,11 @@ public class AddApplicationCommand
 public class UpdateImageCommand
 {
     public string Image { get; set; }
+}
+
+public class QueueMessage<T>
+{
+    public string Action { get; set; }
+    public string Version { get; set; }
+    public T Data { get; set; }
 }

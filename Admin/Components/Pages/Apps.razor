@@ -7,42 +7,58 @@
 
 <PageTitle>Apps</PageTitle>
 
-<h1>Apps</h1>
+<h1>Add app</h1>
+
+<label>
+    Name:
+    <InputText TValue="string" @bind-Value="addApplicationCommand.Name" />
+</label>
+
+<label>
+    Image:
+    <InputSelect TValue="string" @bind-Value="addApplicationCommand.Image">
+        <option value="">Select an image</option>
+        @foreach (var tag in _webapplicationTags)
+        {
+        <option value="@tag">@tag</option>
+        }
+    </InputSelect>
+</label>
 
 <button class="btn btn-primary" @onclick="async () => await AddApplication()">Add app</button>
 
+<h1>Apps</h1>
 <table>
     <thead>
     <tr>
         <th>Name</th>
         <th>Image</th>
         <th>Change image</th>
+        <th></th>
     </tr>
     </thead>
-    
     <tbody>
     @foreach (var application in _applications)
     {
-        <tr>
-            <td>@application.Name</td>
-            <td>@application.Image</td>
-            <td>
-                <select @onchange="args => ChangeTag(application, args)">
-                    <option></option>
-                    @foreach (var tag in _webapplicationTags)
-                    {
-                        if (tag == application.Image)
-                        {
-                            <option selected="selected">@tag</option>
-                        }
-                        else
-                        {
-                            <option>@tag</option>
-                        }
-                    }
-                </select>
-            </td>
-        </tr>
+    <tr>
+        <td><a href="http://k8s-app.local/@application.Name" target="_blank">@application.Name</a></td>
+        <td>@application.Image</td>
+        <td>
+            <InputSelect TValue="string"
+                         Value="@application.Image"
+                         ValueChanged="@(args => ChangeTag(application, args))"
+                         ValueExpression="() => application.Image">
+                <option value="">Select an image</option>
+                @foreach (var tag in _webapplicationTags)
+                {
+                <option value="@tag" selected="@(tag == application.Image)">@tag</option>
+                }
+            </InputSelect>
+        </td>
+        <td>
+            <button @onclick="async () => await Delete(application)">Delete</button>
+        </td>
+    </tr>
     }
     </tbody>
 </table>
@@ -54,6 +70,9 @@
     private List<string> _webapplicationTags = new List<string>();
     private HttpClient _adminClient;
     private HttpClient _registryClient;
+    
+
+    private AddApplicationCommand addApplicationCommand = new AddApplicationCommand();
     
     protected override async Task OnInitializedAsync()
     {
@@ -70,7 +89,6 @@
         var content = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
         _webapplicationTags = JsonSerializer.Deserialize<DockerImageResponse>(content).Tags.ToList();
-        StateHasChanged();
     }
 
     private async Task ListCustomers()
@@ -79,7 +97,6 @@
         var content = await response.Content.ReadAsStringAsync();
         response.EnsureSuccessStatusCode();
         _applications = JsonSerializer.Deserialize<List<Application>>(content);
-        StateHasChanged();
     }
 
     private class Application
@@ -100,20 +117,16 @@
     {
         public string Image { get; set; }
     }
-    
-    
 
     private async Task AddApplication()
     {      
-        var command = new AddApplicationCommand()
-        {
-            Name = Guid.NewGuid().ToString()
-        };
-        
-        var response = await _adminClient.PostAsync("applications", new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json"));
+        var response = await _adminClient.PostAsync("applications", new StringContent(JsonSerializer.Serialize(addApplicationCommand), Encoding.UTF8, "application/json"));
         response.EnsureSuccessStatusCode();
-        
-        await ListCustomers();
+
+        var app = JsonSerializer.Deserialize<Application>(await response.Content.ReadAsStringAsync());
+        _applications.Add(app);
+
+        addApplicationCommand = new AddApplicationCommand();
     }  
     
     public class DockerImageResponse
@@ -126,16 +139,28 @@
     }
 
 
-    private async Task ChangeTag(Application application, ChangeEventArgs args)
+    private async Task ChangeTag(Application application, string image)
     {
+        application.Image = image;
+        
         var command = new UpdateApplicationImageCommand()
         {
-            Image = args.Value.ToString()
+            Image = application.Image
         };
         
         var response = await _adminClient.PostAsync($"applications/{application.Name}", new StringContent(JsonSerializer.Serialize(command), Encoding.UTF8, "application/json"));
         response.EnsureSuccessStatusCode();
     }
+
+    private async Task Delete(Application application)
+    {
+        var response = await _adminClient.DeleteAsync($"applications/{application.Name}");
+        response.EnsureSuccessStatusCode();
+
+        var app = _applications.First(x => x.Name == application.Name);
+        _applications.Remove(app);
+    }
+
 
 }
 
