@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Admin.Api.Infrastructure;
+namespace App.Management.Backend.Infrastructure;
 
 public static class SeviceProvider
 {

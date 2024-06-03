@@ -1,4 +1,3 @@
-using Admin.Components;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -45,7 +44,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapRazorComponents<App>()
+app.MapRazorComponents<App.Management.Components.App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();

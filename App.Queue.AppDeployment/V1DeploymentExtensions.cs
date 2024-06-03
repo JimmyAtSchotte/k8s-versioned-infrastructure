@@ -1,6 +1,6 @@
 ﻿using k8s.Models;
 
-namespace Admin.Events.AppVersionListner;
+namespace App.Queue.AppDeployment;
 
 public static class V1DeploymentExtensions
 {

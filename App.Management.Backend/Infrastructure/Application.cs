@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson;
 
-namespace Admin.Api.Infrastructure;
+namespace App.Management.Backend.Infrastructure;
 
 public class Application
 {

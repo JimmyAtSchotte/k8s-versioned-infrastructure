@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 
-namespace Admin.Events.AppVersionListner;
+namespace App.Queue.AppDeployment;
 
 
 public class WorkerOptions

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 
-namespace Admin.Events.AppVersionListner;
+namespace App.Queue.AppDeployment;
 
 public class Program
 {

@@ -1,4 +1,4 @@
-﻿namespace Admin.Events.AppVersionListner;
+﻿namespace App.Queue.AppDeployment;
 
 public class QueueMessage<T> 
 {

@@ -6,7 +6,6 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <InvariantGlobalization>true</InvariantGlobalization>
         <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-        <RootNamespace>Admin.Api</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

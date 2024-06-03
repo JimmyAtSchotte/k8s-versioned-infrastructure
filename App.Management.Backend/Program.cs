@@ -1,6 +1,6 @@
-using Admin.Api;
-using Admin.Api.Infrastructure;
-using Admin.Api.Services;
+using App.Management.Backend;
+using App.Management.Backend.Infrastructure;
+using App.Management.Backend.Services;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -146,7 +146,7 @@ app.MapDelete("/applications/{name}", async (string name, AdminContext db, Rabbi
 
 app.Run();
 
-namespace Admin.Api
+namespace App.Management.Backend
 {
     public class AppplicationResponse
     {
