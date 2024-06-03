@@ -1,0 +1,74 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-management-backend
+  labels:
+    app: app-management-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-management-backend
+  template:
+    metadata:
+      labels:
+        app: app-management-backend
+    spec:
+      containers:
+        - name: admin-api
+          image: localhost:5000/app-management-backend
+          ports:
+            - containerPort: 8080
+          env:                        
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: secrets
+                  key: management_db_username
+            - name: DB_PASSWORD
+              valueFrom: 
+                secretKeyRef:
+                  name: secrets
+                  key: management_db_password
+            - name: DB_SERVER
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: management_db_server
+            - name: DB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: management_db_database
+            - name: QUEUE_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: queue_host
+            - name: QUEUE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: queue_name                  
+            - name: QUEUE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-deployment-default-user
+                  key: username
+            - name: QUEUE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-deployment-default-user
+                  key: password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-management-backend-service
+spec:
+  selector:
+    app: app-management-backend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080

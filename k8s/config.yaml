@@ -3,9 +3,9 @@ kind: ConfigMap
 metadata:
   name: config
 data:
-  admin_db_server: "admin-db-service"
-  admin_db_database: "admin"
-  admin_api_url: "http://admin-api-service.default.svc.cluster.local"
+  management_db_server: "app-management-db-service"
+  management_db_database: "apps"
+  management_api_url: "http://app-management-backend-service.default.svc.cluster.local"
   registry_api_url: "http://registry-service.default.svc.cluster.local:5000/v2/"
   queue_host: "rabbitmq-deployment.default.svc.cluster.local"
-  queue_name: "application-version"
+  queue_name: "app-deployment"

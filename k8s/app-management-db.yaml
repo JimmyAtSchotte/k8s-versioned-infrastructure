@@ -1,0 +1,69 @@
+﻿apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-management-db-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-management-db  
+  labels:
+    app: app-management-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-management-db
+  template:
+    metadata:
+      labels:
+        app: app-management-db
+    spec:
+      containers:
+        - name: app-management-db
+          image: mongo
+          ports:
+            - containerPort: 27017
+          env:
+            - name: MONGO_INITDB_DATABASE
+              valueFrom:
+                configMapKeyRef:
+                  key: management_db_database
+                  name: config
+            - name: MONGO_INITDB_ROOT_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  key: management_db_username
+                  name: secrets
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: management_db_password
+                  name: secrets   
+          volumeMounts:
+            - name: app-management-db-storage
+              mountPath: /data/db
+      volumes:
+        - name: app-management-db-storage
+          persistentVolumeClaim:
+            claimName: app-management-db-pvc               
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-management-db-service
+spec:
+  selector:
+    app: app-management-db
+  ports:
+    - protocol: TCP
+      port: 27017
+      targetPort: 27017
+
+

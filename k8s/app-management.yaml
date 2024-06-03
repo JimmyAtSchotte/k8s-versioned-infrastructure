@@ -1,0 +1,64 @@
+﻿apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-management  
+  labels:
+    app: admin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app-management
+  template:
+    metadata:
+      labels:
+        app: app-management
+    spec:
+      containers:
+        - name: app-management
+          image: localhost:5000/app-management
+          ports:
+            - containerPort: 8080
+          env:
+            - name: ADMIN_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: management_api_url
+            - name: REGISTRY_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: config
+                  key: registry_api_url
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-management-service
+spec:
+  selector:
+    app: app-management
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8080
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-management-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: "k8s-app-management.local"
+      http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: app-management-service
+                port:                  
+                  number: 80
